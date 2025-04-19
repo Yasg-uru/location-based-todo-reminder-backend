@@ -10,7 +10,7 @@ import Errorhandler from "../util/Errorhandler.util";
 import sendtoken from "../util/sendtoken";
 import { reqwithuser } from "../middleware/auth.middleware";
 import { Schema, ObjectId } from "mongoose";
-import courseModel from "../models/coursemodel";
+
 
 export const registerUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -237,112 +237,5 @@ export const Resetpassword = catchAsync(
   }
 );
 
-//implementing progress tracking functionality
-export const completeLesson = catchAsync(
-  async (req: reqwithuser, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user?._id;
-      const { courseId, moduleId, lessonId } = req.params;
 
-      const user = await usermodel.findById(userId);
-      if (!user) {
-        return next(new Errorhandler(404, "user not found"));
-      }
-      const course = user.EnrolledCourses.find(
-        (course) => course.courseId.toString() === courseId.toString()
-      );
-      if (!course) {
-        return next(new Errorhandler(404, "course not found"));
-      }
-      const module = course.modulesProgress.find(
-        (module) => module.moduleId.toString() === moduleId.toString()
-      );
-      if (!module) {
-        return next(new Errorhandler(404, "Module not found "));
-      }
-      if (module.progress === 100) {
-        return next(
-          new Errorhandler(403, "All lessons are completed to this module")
-        );
-      }
-      const LessonId = lessonId as unknown as Schema.Types.ObjectId;
-      const courseModules = await courseModel.findById(courseId);
-      if (!courseModules) {
-        return next(new Errorhandler(404, "course not found "));
-      }
-      const ModuleLessons = courseModules.modules.find(
-        (module) => (module._id as string).toString() === moduleId.toString()
-      );
-      if (!ModuleLessons) {
-        return next(new Errorhandler(404, "Lesson not found"));
-      }
-      if (!module.completedLessons.includes(LessonId)) {
-        module.completedLessons.push(LessonId);
-        const TotalLessons = ModuleLessons.lessons.length;
-        module.progress = (module.completedLessons.length / TotalLessons) * 100;
-        module.completionStatus = module.progress === 100;
-        //recalculating the overall course progress
-        const TotalModules = course.modulesProgress.length;
-        const completedModules = course.modulesProgress.filter(
-          (module) => module.completionStatus
-        ).length;
-        course.overallProgress = (completedModules / TotalModules) * 100;
-        course.CompletionStatus = course.overallProgress === 100;
-        await user.save();
-      }
-      res.status(200).json({
-        success: true,
-        message: "Successfully tracked your progress",
-        user,
-      });
-    } catch (error: any) {
-      return next(new Errorhandler(500, "Internal server Error "));
-    }
-  }
-);
-export const LoadProgress = catchAsync(
-  async (req: reqwithuser, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user?._id;
-      const { courseId } = req.params;
 
-      const user = await usermodel.findById(userId);
-      if (!user) {
-        return next(new Errorhandler(404, "User not found"));
-      }
-      const EnrolledCourse = user.EnrolledCourses.find(
-        (course) => course.courseId.toString() === courseId.toString()
-      );
-      if (!EnrolledCourse) {
-        return next(new Errorhandler(404, "user not enrolled to this course "));
-      }
-
-      res.status(200).json({
-        success: true,
-        message: "successfully fetched your progress to the particular course",
-        EnrolledCourse,
-      });
-    } catch (error: any) {
-      return next(new Errorhandler(500, "Internal server Error "));
-    }
-  }
-);
-export const getAllEnrolledCourseProgress = catchAsync(
-  async (req: reqwithuser, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user?._id;
-      const user = await usermodel.findById(userId);
-      if (!user) {
-        return next(new Errorhandler(404, "User not found "));
-      }
-      const EnrolledCourses = user.EnrolledCourses;
-      res.status(200).json({
-        success: true,
-        message: "Successfully fetched enrolled courses",
-        EnrolledCourses,
-      });
-    } catch (error: any) {
-      return next(new Errorhandler(500, "Internal server Error "));
-    }
-  }
-);
