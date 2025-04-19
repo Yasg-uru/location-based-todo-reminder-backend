@@ -49,6 +49,8 @@ const userSchema = new Schema<User>(
         "your password should be greater than length of 5 characters",
       ],
     },
+
+    
     profileUrl: {
       type: String,
     },
