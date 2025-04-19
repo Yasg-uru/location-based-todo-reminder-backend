@@ -13,6 +13,7 @@ app.use(
     origin: [
       
       "http://localhost:5173",
+      "https://todo-silk-omega.vercel.app"
       
     ], // The IP address where your Expo app is running
     credentials: true,
@@ -22,6 +23,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
+app.use("/user", userRouter);
 
 app.use(ErrorhandlerMiddleware);
 
